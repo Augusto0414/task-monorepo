@@ -1,0 +1,124 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tasks-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: coredb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - task-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d coredb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./tasks-api
+      dockerfile: docker/Dockerfile
+    container_name: tasks-api
+    restart: unless-stopped
+    working_dir: /var/www/html
+    user: "1000:1000"
+    env_file:
+      - ./tasks-api/.env
+    environment:
+      DB_HOST: postgres
+      REVERB_HOST: reverb
+      REVERB_PORT: 8081
+      REVERB_SCHEME: http
+      REVERB_SERVER_PORT: 8081
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./tasks-api:/var/www/html
+    networks:
+      - task-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  reverb:
+    build:
+      context: ./tasks-api
+      dockerfile: docker/Dockerfile
+    container_name: tasks-reverb
+    restart: unless-stopped
+    working_dir: /var/www/html
+    user: "1000:1000"
+    env_file:
+      - ./tasks-api/.env
+    environment:
+      DB_HOST: postgres
+      REVERB_HOST: reverb
+      REVERB_PORT: 8081
+      REVERB_SCHEME: http
+      REVERB_SERVER_PORT: 8081
+      APP_ROLE: reverb
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./tasks-api:/var/www/html
+    networks:
+      - task-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./task-web
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000/api/v1}
+        VITE_APP_URL: ${VITE_APP_URL:-http://localhost:8000}
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-zlaxew67knteaz8oljnh}
+        VITE_REVERB_CLUSTER: ${VITE_REVERB_CLUSTER:-mt1}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST:-localhost}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-8081}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-http}
+    ports:
+      - "3000:80"
+    networks:
+      - task-network
+    depends_on:
+      - api
+      - reverb
+
+  web-dev:
+    profiles:
+      - dev
+    build:
+      context: ./task-web
+      dockerfile: docker/Dockerfile
+      target: dev
+    env_file:
+      - ./task-web/.env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./task-web:/app
+      - /app/node_modules
+    networks:
+      - task-network
+    depends_on:
+      - api
+      - reverb
+
+networks:
+  task-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
