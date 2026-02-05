@@ -2,6 +2,11 @@
 
 Este documento explica como construir los contenedores y ejecutar pruebas dentro del contenedor del backend.
 
+## Repositorios originales sin Websockets
+
+- https://github.com/Augusto0414/task-api
+- https://github.com/Augusto0414/task-web
+
 ## Lo mas importante
 
 - El `docker-compose.yml` raiz construye todos los servicios juntos: `api`, `reverb`, `postgres`, `web`.

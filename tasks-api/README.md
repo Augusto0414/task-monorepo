@@ -1,10 +1,5 @@
 # API de Tareas - Documentación
 
-## Repositorios originales sin Websockets
-
-- https://github.com/Augusto0414/task-api
-- https://github.com/Augusto0414/task-web
-
 ## Levantar la API con Docker Compose
 
 Desde la raíz del proyecto:

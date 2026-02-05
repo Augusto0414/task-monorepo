@@ -2,11 +2,6 @@
 
 Aplicación web para gestionar tareas con tablero Kanban, autenticación y cambios de estado en tiempo real.
 
-## Repositorios originales
-
-- https://github.com/Augusto0414/task-api
-- https://github.com/Augusto0414/task-web
-
 ## Características
 
 - Registro e inicio de sesión.
